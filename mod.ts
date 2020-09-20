@@ -38,6 +38,12 @@ const stateMachine: {[key: string]: (selectedMenu: string) => void | Promise<voi
             case 'back_x': state = 'registry_home'; break;
             default: state ='module_info'; workingMem.selectedModule = selectedMenu; break;
         }
+    },
+    'module_info': async (selectedMenu: string) => {
+        switch (selectedMenu) {
+            case 'back_x': state = 'registry_home'; break;
+            default: await workingMem.moduleInfoActions[selectedMenu](); break;
+        }
     }
 };
 let state = 'select_registry';
@@ -73,8 +79,8 @@ async function getMenu() {
                 ]
             };
         case 'module_info':
-            await registries[workingMem.registry].showInfoPage(workingMem.selectedModule);
-            return {title: `${'\u0008'.repeat(5)}Action:`, options: []};
+            const infoOptions = await registries[workingMem.registry].showInfoPage(workingMem.selectedModule);
+            return {title: `${'\u0008'.repeat(5)}Action:`, options: [...infoOptions as any, { name: "Back", value: "back_x"}]};
     }
 }
 /* { name: "Next page", value: "next_page_x" },
@@ -89,7 +95,38 @@ const registries: {[key: string]: RegistryDef} = {
             workingMem.totalModules = response.data.total_count;
             return (response.data.results  as any[]).map(m => ({name: `${`${colors.white(m.star_count.toString())}${colors.yellow("*")}`.padStart(26)} ${colors.green(m.name.padEnd(15))} - ${(m.description as string)?.slice(0, 50)}`, value: m.name}));
         },
-        showInfoPage: (module: string) => { console.log('\n' + module);}
+        showInfoPage: async (module: string) => {
+            console.log();
+            // https://cdn.deno.land/pretty_benching/meta/versions.json
+            // https://api.deno.land/modules/pretty_benching
+            // https://cdn.deno.land/pretty_benching/versions/v0.3.0/meta/meta.json
+            // https://cdn.deno.land/pretty_benching/versions/v0.3.0/raw/README.md
+            const versionInfo = await ((await fetch(`https://cdn.deno.land/${module}/meta/versions.json`)).json());
+            const latest = versionInfo.latest; //versionInfo.versions
+            const moduleInfo = await ((await fetch(`https://cdn.deno.land/${module}/versions/${latest}/meta/meta.json`)).json());
+            const uploadedAt = moduleInfo.uploaded_at;
+            // directory_listing
+            const repo = `${moduleInfo.upload_options.type} - ${moduleInfo.upload_options.repository}`;
+            const readme = (moduleInfo.directory_listing as any[]).filter(l => l.path.toLowerCase().indexOf('readme.md') !== -1);            
+
+            console.log(`MODULE: ${colors.bold(colors.magenta(module))}`);
+            console.log(`Version: [${colors.yellow(latest)}] (${uploadedAt})`);
+            console.log(`Repo: ${colors.brightCyan(repo)}`);
+
+            const actions: any = [];
+            workingMem.moduleInfoActions = {};
+
+            if(readme.length > 0) {
+                workingMem.moduleInfoActions['readme'] = async () => {
+                    const readmeText = await ((await fetch(`https://cdn.deno.land/pretty_benching/versions/v0.3.0/raw${readme[0].path.replace('../', '/')}`)).text());
+                    console.log(readmeText);
+                }
+                actions.push({name: 'Show raw readme', value: 'readme'});
+            }
+            
+            return actions as any;
+
+        }
     },
     "nest.land": {
         name: "x.next.land",
@@ -103,7 +140,10 @@ const registries: {[key: string]: RegistryDef} = {
             const modulesOnPage = (filteredModules as any[]).slice((page-1) * pageSize, Math.min(filteredModules.length, page * pageSize));
             return modulesOnPage.map(m => ({name: `${colors.green(m.name.padEnd(15))} - ${(m.description as string)?.slice(0, 50)}`, value: m.name}));
         },
-        showInfoPage: (module: string) => { console.log('\n' + module);}
+        showInfoPage: (module: string) => {
+            // https://x.nest.land/api/package/superoak 
+            console.log('\n' + module);
+        }
     }
 }
 
