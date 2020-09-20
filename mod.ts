@@ -118,7 +118,7 @@ const registries: {[key: string]: RegistryDef} = {
 
             if(readme.length > 0) {
                 workingMem.moduleInfoActions['readme'] = async () => {
-                    const readmeText = await ((await fetch(`https://cdn.deno.land/pretty_benching/versions/v0.3.0/raw${readme[0].path.replace('../', '/')}`)).text());
+                    const readmeText = await ((await fetch(`https://cdn.deno.land/${module}/versions/${latest}/raw${readme[0].path.replace('../', '/')}`)).text());
                     console.log(readmeText);
                 }
                 actions.push({name: 'Show raw readme', value: 'readme'});
