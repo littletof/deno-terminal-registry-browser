@@ -1,0 +1,1 @@
+deno run --unstable --allow-net https://raw.githubusercontent.com/littletof/deno-terminal-registry/master/mod.ts

@@ -174,8 +174,9 @@ async function showModuleMenu() {
       message: `${'\u0008'.repeat(5)}${currentMenu?.title}`,
       options: currentMenu!.options,
       keys: {
-          next: ['s'],
-          previous: ['w']
+        // arrows doesnt work on windows: https://github.com/c4spar/deno-cliffy/issues/47
+        previous: [ 'up', 'w' ],
+        next: [ 'down', 's' ]
       },
       default: currentMenu!.default,
       maxRows: 17,
