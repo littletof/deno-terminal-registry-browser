@@ -1,4 +1,4 @@
-import { Select } from "https://deno.land/x/cliffy@v0.14.1/prompt/select.ts";
+import { Select, SelectValueOptions } from "https://deno.land/x/cliffy@v0.14.1/prompt/select.ts";
 import { Input } from "https://deno.land/x/cliffy/prompt/input.ts";
 import  * as colors from 'https://deno.land/std@0.70.0/fmt/colors.ts';
 
@@ -6,7 +6,7 @@ interface RegistryDef {
     name: string;
     init: () => Promise<void> | void | undefined;
     getModulesPage: (page: number, pageSize: number, query?: string) => RegistryListItem[] | Promise<RegistryListItem[]>;
-    showInfoPage: (module: string) => void | Promise<void>;
+    showInfoPage: (module: string) => void | Promise<void> | SelectValueOptions | Promise<SelectValueOptions>;
 }
 
 interface RegistryListItem {
@@ -106,12 +106,16 @@ const registries: {[key: string]: RegistryDef} = {
             const moduleInfo = await ((await fetch(`https://cdn.deno.land/${module}/versions/${latest}/meta/meta.json`)).json());
             const uploadedAt = moduleInfo.uploaded_at;
             // directory_listing
-            const repo = `${moduleInfo.upload_options.type} - ${moduleInfo.upload_options.repository}`;
+            const apiModule = await ((await fetch(`https://api.deno.land/modules/${module}`)).json());
+            const repo =  moduleInfo.upload_options.type === 'github' ? `https://github.com/${moduleInfo.upload_options.repository}`: `${moduleInfo.upload_options.type} - ${moduleInfo.upload_options.repository}`;
             const readme = (moduleInfo.directory_listing as any[]).filter(l => l.path.toLowerCase().indexOf('readme.md') !== -1);            
 
-            console.log(`MODULE: ${colors.bold(colors.magenta(module))}`);
+            console.log(`Module: ${colors.bold(colors.magenta(module))}`);
+            console.log(`Stars: ${JSON.stringify(apiModule.data.star_count)}${colors.yellow('*')}`);
             console.log(`Version: [${colors.yellow(latest)}] (${uploadedAt})`);
             console.log(`Repo: ${colors.brightCyan(repo)}`);
+            console.log(`Description: ${apiModule.data.description}`);
+            console.log('-'.repeat(20));
 
             const actions: any = [];
             workingMem.moduleInfoActions = {};
@@ -119,12 +123,13 @@ const registries: {[key: string]: RegistryDef} = {
             if(readme.length > 0) {
                 workingMem.moduleInfoActions['readme'] = async () => {
                     const readmeText = await ((await fetch(`https://cdn.deno.land/${module}/versions/${latest}/raw${readme[0].path.replace('../', '/')}`)).text());
+                    console.log();
                     console.log(readmeText);
                 }
                 actions.push({name: 'Show raw readme', value: 'readme'});
             }
             
-            return actions as any;
+            return actions;
 
         }
     },
@@ -140,9 +145,16 @@ const registries: {[key: string]: RegistryDef} = {
             const modulesOnPage = (filteredModules as any[]).slice((page-1) * pageSize, Math.min(filteredModules.length, page * pageSize));
             return modulesOnPage.map(m => ({name: `${colors.green(m.name.padEnd(15))} - ${(m.description as string)?.slice(0, 50)}`, value: m.name}));
         },
-        showInfoPage: (module: string) => {
+        showInfoPage: async (module: string) => {
             // https://x.nest.land/api/package/superoak 
-            console.log('\n' + module);
+            console.log();
+            const moduleInfo = await ((await fetch(`https://x.nest.land/api/package/${module}`)).json());
+            console.log(`Module: ${colors.bold(colors.magenta(module))}`);
+            console.log(`Version: [${colors.yellow(moduleInfo.latestVersion)}] (${moduleInfo.updatedAt})`);
+            console.log(`Repo: ${colors.brightCyan(moduleInfo.repository)}`);
+            console.log(`Description: ${moduleInfo.description}`);
+            console.log('-'.repeat(20));
+            return [];
         }
     }
 }
