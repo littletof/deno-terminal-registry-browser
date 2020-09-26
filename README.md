@@ -5,7 +5,7 @@
 Reads basic info from `deno.land/x` and `x.nest.land`.
 Has search, module info, and can print README on deno.land registered modules
 
-deno run --unstable --allow-net https://raw.githubusercontent.com/littletof/deno-terminal-registry/master/mod.ts
+deno run --unstable --allow-net https://raw.githubusercontent.com/littletof/deno-terminal-registry-browser/master/mod.ts
 
 ## deno.land/x
 ![deno.land](docs/denoland.png)
