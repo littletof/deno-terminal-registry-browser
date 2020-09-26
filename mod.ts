@@ -14,7 +14,12 @@ interface RegistryListItem {
     value: string;
 }
 
+
 const up1Line = "\x1B[1A";
+
+// HACK stdout to console log so emojis work on windows too
+Deno.stdout.writeSync = ((x: any) => { console.log(new TextDecoder().decode(x) + up1Line)}) as any;
+
 const workingMem: any = {};
 const stateMachine: {[key: string]: (selectedMenu: string) => void | Promise<void>} = {
     'select_registry': async (selectedMenu: string) => {
@@ -51,14 +56,14 @@ let state = 'select_registry';
 async function getMenu() {
     switch(state) {
         case 'select_registry':
-            return {title: 'Select registry', options: Object.keys(registries).map(r => ({name: r, value: r}))};
+            return {title: 'Select registry', options: Object.keys(registries).map(r => ({name: registries[r].name, value: r}))};
         case 'registry_home':
             const rMenu = await registries[workingMem.registry].getModulesPage(workingMem.page, workingMem.pageSize);
             const totalPages = Math.ceil(workingMem.totalModules / workingMem.pageSize);
             return {title: workingMem.registry, options: [
-                { name: "", value: "", disabled: true},
+                Select.separator(""),
                 ...rMenu,
-                { name: "", value: "", disabled: true},
+                Select.separator(""),
                 Select.separator(`---- ${workingMem.page} / ${totalPages} (${workingMem.totalModules} modules)----`),
                 { name: menuColor("Next page", workingMem.page === totalPages), value: "next_page_x", disabled: workingMem.page === totalPages },
                 { name: menuColor("Previous page", workingMem.page === 1), value: "prev_page_x", disabled: workingMem.page === 1 },
@@ -71,9 +76,9 @@ async function getMenu() {
             const qMenu = await registries[workingMem.registry].getModulesPage(workingMem.page, workingMem.pageSize, workingMem.query);
             return {
                 title: `Searching in ${workingMem.registry} for: "${workingMem.query}"`, options: [
-                    { name: "", value: "", disabled: true},
+                    Select.separator(""),
                     ...qMenu,
-                    { name: "", value: "", disabled: true},
+                    Select.separator(""),
                     Select.separator(`---- Searching for: "${workingMem.query}" ----`),
                     { name: "Back", value: "back_x"},
                 ]
@@ -88,12 +93,12 @@ async function getMenu() {
 
 const registries: {[key: string]: RegistryDef} = {
     "deno.land": {
-        name: "deno.land/x",
+        name: "🦕 deno.land/x",
         init: () => {},
         getModulesPage: async (page: number, pageSize: number, query?: string) => {
             const response = await ((await fetch(`https://api.deno.land/modules?page=${page}&limit=${pageSize}${query? `&query=${query}`: ""}`)).json());
             workingMem.totalModules = response.data.total_count;
-            return (response.data.results  as any[]).map(m => ({name: `${`${colors.white(m.star_count.toString())}${colors.yellow("*")}`.padStart(26)} ${colors.green(m.name.padEnd(15))} - ${(m.description as string)?.slice(0, 50)}`, value: m.name}));
+            return (response.data.results  as any[]).map(m => ({name: `${colors.green(m.name.padEnd(18))} ${`${colors.white(m.star_count.toString())}${colors.yellow("⭐")}`.padStart(26)} - ${(m.description as string)?.slice(0, 50)}`, value: m.name}));
         },
         showInfoPage: async (module: string) => {
             console.log();
@@ -111,7 +116,7 @@ const registries: {[key: string]: RegistryDef} = {
             const readme = (moduleInfo.directory_listing as any[]).filter(l => l.path.toLowerCase().indexOf('readme.md') !== -1);            
 
             console.log(`Module: ${colors.bold(colors.magenta(module))}`);
-            console.log(`Stars: ${JSON.stringify(apiModule.data.star_count)}${colors.yellow('*')}`);
+            console.log(`Stars: ${JSON.stringify(apiModule.data.star_count)}${colors.yellow('⭐')}`);
             console.log(`Version: [${colors.yellow(latest)}] (${uploadedAt})`);
             console.log(`Repo: ${colors.brightCyan(repo)}`);
             console.log(`Description: ${apiModule.data.description}`);
@@ -134,7 +139,7 @@ const registries: {[key: string]: RegistryDef} = {
         }
     },
     "nest.land": {
-        name: "x.next.land",
+        name: "🥚 x.next.land",
         init: async () => {
             const response = await ((await fetch(`https://x.nest.land/api/packages`)).json());
             workingMem.nestModules = response;
