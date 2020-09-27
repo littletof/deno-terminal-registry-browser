@@ -14,16 +14,16 @@ deno run --unstable --allow-net https://raw.githubusercontent.com/littletof/deno
 ## x.nest.land
 ![nest.land](docs/nestland.png)
 
-### Idea
+### 🚩 Flags idea
 
-|Flag|Required|Reason|Without|
+|Flag| R |Reason|Without|
 |:--|:-:|:--|:--|
 | 🚧 `--unstable` | * | Needed for Cliffy to work | 🚫 Wont start |
 | 🌐 `--allow-net` | * | To fetch data from the repos | 🚫 Wont start |
 | 🔍 `--allow-read` |  | Needed for cache info | Wont be able to browse cached |
 | 💾 `--allow-write` |  | Save favourites | Wont be able to save favourites |
 | ⏱ `--allow-hrtime` |  | Allows precise benchmarking | Loss of accuracy |
-| 🚩 `--allow-run` |  | Needed for feature x | Feature wont be available |
+| ⚠ `--allow-run` |  | Needed for feature x | Feature wont be available |
 | 🔮 `--allow-all` |  | It should never be required | You have to type out flags |
 | 🧭 `--allow-env` |  | Needed to access your ENV |  |
 | 🧩 `--allow-plugin` |  | Needed to run RUST plugins | no automatation |
